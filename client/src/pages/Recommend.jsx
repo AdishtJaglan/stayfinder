@@ -14,10 +14,9 @@ import {
   FiArrowLeft,
   FiRotateCcw,
   FiSave,
-} from "react-icons/fi"; // Added icons
-import { FaSpinner } from "react-icons/fa"; // Added spinner
+} from "react-icons/fi";
+import { FaSpinner } from "react-icons/fa";
 
-// --- Unchanged constants and helper functions ---
 const hotels = hotelsRich;
 const TRIP_TYPES = [
   "business",
@@ -54,9 +53,7 @@ const DEFAULT_QUIZ = {
 function clamp(n, a, b) {
   return Math.max(a, Math.min(b, n));
 }
-// --- End of unchanged code ---
 
-// Helper component for quiz step headers
 function StepHeader({ icon, text }) {
   return (
     <div className="flex items-center gap-2 mb-3">
@@ -74,7 +71,6 @@ export default function Recommend() {
   const [step, setStep] = useState(0);
   const totalSteps = 5;
 
-  // --- Unchanged state logic ---
   const [isThinking, setIsThinking] = useState(false);
   const [progress, setProgress] = useState(0);
   const [traceLines, setTraceLines] = useState([]);
@@ -118,7 +114,6 @@ export default function Recommend() {
     setProgress(0);
   }
 
-  // --- Unchanged core logic (scoreAndExplain, runRecommendation, etc.) ---
   function scoreAndExplain(hotel, quizAnswers) {
     let score = 0;
     const reasons = [];
@@ -282,7 +277,7 @@ export default function Recommend() {
           lastRecommendedAt: new Date().toISOString(),
         });
       }
-    }, totalDuration + 600);
+    }, totalDuration + 3500);
   }
 
   useEffect(() => {
@@ -300,10 +295,8 @@ export default function Recommend() {
       text: `Scored ${top.score}. ${top.reasonParts.slice(1, 3).join(" ")}`,
     };
   }, [results]);
-  // --- End of unchanged logic ---
 
   return (
-    // Page background
     <div className="bg-stone-50 min-h-screen text-stone-800">
       <div className="p-6 md:p-10 max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
@@ -334,7 +327,6 @@ export default function Recommend() {
             </div>
 
             {isThinking ? (
-              // --- Thinking State ---
               <div className="text-center py-6">
                 <div className="mb-4">
                   <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-lg">
@@ -364,7 +356,6 @@ export default function Recommend() {
                 </div>
               </div>
             ) : (
-              // --- Quiz Steps ---
               <>
                 {step === 0 && (
                   <div>
@@ -568,10 +559,8 @@ export default function Recommend() {
             )}
           </aside>
 
-          {/* --- Main Content Area --- */}
           <main className="lg:col-span-2 space-y-8">
             {isThinking && (
-              // --- Main Content Skeleton ---
               <div className="p-6 bg-white border border-stone-200 rounded-lg shadow-sm">
                 <h3 className="text-2xl font-serif font-bold text-stone-900 mb-2">
                   Thinking...
@@ -596,7 +585,6 @@ export default function Recommend() {
             )}
 
             {!isThinking && results && (
-              // --- Results Display ---
               <div>
                 <div className="flex items-start justify-between mb-6">
                   <div>
@@ -621,7 +609,6 @@ export default function Recommend() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {results.map(({ hotel, score, reasonText }) => (
-                    // Card + Reason wrapper
                     <div
                       key={hotel.id}
                       className="bg-white border border-stone-200 rounded-lg shadow-sm"
@@ -672,7 +659,6 @@ export default function Recommend() {
             )}
 
             {!isThinking && !results && (
-              // --- "How it works" Initial State ---
               <div className="p-8 bg-white border border-stone-200 rounded-lg shadow-sm">
                 <h3 className="text-2xl font-serif font-bold text-stone-900 mb-3">
                   How it works
@@ -695,7 +681,7 @@ export default function Recommend() {
                 <div className="mt-6">
                   <button
                     onClick={() => {
-                      setStep(0); // Go to first step
+                      setStep(0);
                     }}
                     className="px-5 py-2.5 bg-emerald-700 text-white font-bold rounded-md hover:bg-emerald-800 transition flex items-center gap-2"
                   >
