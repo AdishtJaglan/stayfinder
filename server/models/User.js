@@ -1,12 +1,11 @@
-// models/User.js
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema(
+const UserSchema = new mongoose.Schema(
   {
     name: String,
     email: { type: String, unique: true },
-    password: String, // bcrypt hash
-    savedHotels: [{ type: String }], // hotel IDs
+    password: String, // hashed
+    savedHotels: [String], // hotel ids
     quizAnswers: Object,
     lastRecommendations: [String],
     lastRecommendedAt: Date,
@@ -14,4 +13,4 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("User", userSchema);
+export default mongoose.model("User", UserSchema);
