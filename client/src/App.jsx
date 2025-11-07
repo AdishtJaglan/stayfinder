@@ -13,7 +13,7 @@ export default function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-black text-white">
+        <div className="min-h-screen bg-stone-50 text-white">
           <Navbar />
           <Routes>
             <Route path="/" element={<Home />} />

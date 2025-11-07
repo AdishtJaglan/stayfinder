@@ -1,7 +1,8 @@
-// src/pages/Login.jsx
 import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthProvider";
+import { FiLogIn, FiArrowLeft } from "react-icons/fi";
+import { LuLoaderCircle } from "react-icons/lu";
 
 export default function Login() {
   const { login } = useAuth();
@@ -18,6 +19,7 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setLoading(true);
+
     const res = await login({ username: username.trim(), password });
     setLoading(false);
     if (res.ok) {
@@ -28,56 +30,85 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center p-6">
-      <div className="w-full max-w-md border border-gray-800 rounded p-6">
-        <h2 className="text-2xl font-semibold mb-4">
-          Sign in to StayFinder.ai
+    // Base container: Off-white background, centered, and full height
+    <div className="bg-stone-50 min-h-[70vh] flex items-center justify-center p-6 text-stone-800">
+      <div className="w-full max-w-md bg-white border border-stone-200 rounded-xl shadow-lg p-8 space-y-6">
+        {/* Use serif font for the main heading */}
+        <h2 className="text-3xl font-serif font-bold mb-6 text-stone-900 flex items-center gap-3">
+          <FiLogIn className="text-emerald-700" />
+          Sign in
         </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Username Input */}
           <div>
-            <label className="block text-sm mb-1 text-gray-400">Username</label>
+            <label className="block text-sm font-medium mb-1 text-stone-700">
+              Username
+            </label>
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-black border border-gray-700 px-3 py-2 rounded"
+              // Themed input field
+              className="w-full bg-stone-100 border border-stone-300 px-4 py-2 rounded-lg placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               placeholder="e.g., adarsh"
               required
             />
           </div>
 
+          {/* Password Input */}
           <div>
-            <label className="block text-sm mb-1 text-gray-400">Password</label>
+            <label className="block text-sm font-medium mb-1 text-stone-700">
+              Password
+            </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-black border border-gray-700 px-3 py-2 rounded"
+              // Themed input field
+              className="w-full bg-stone-100 border border-stone-300 px-4 py-2 rounded-lg placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               placeholder="your password"
               required
             />
           </div>
 
-          {error && <div className="text-red-400 text-sm">{error}</div>}
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-300 text-red-700 text-sm p-3 rounded-md">
+              **Error:** {error}
+            </div>
+          )}
 
-          <div className="flex items-center justify-between">
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between pt-2">
             <button
               type="submit"
-              className="px-4 py-2 bg-white text-black rounded flex items-center gap-2"
+              // Accent color button style
+              className="px-6 py-2.5 bg-emerald-700 text-white font-bold rounded-md hover:bg-emerald-800 transition flex items-center gap-2 shadow-md"
               disabled={loading}
             >
-              {loading ? "Signing in..." : "Sign in"}
+              {loading ? (
+                <>
+                  <LuLoaderCircle className="animate-spin" /> Signing in...
+                </>
+              ) : (
+                "Sign in"
+              )}
             </button>
-            <Link to="/" className="text-sm text-gray-400 underline">
-              Back home
+            <Link
+              to="/"
+              className="text-sm text-stone-600 hover:text-emerald-700 transition flex items-center gap-1.5"
+            >
+              <FiArrowLeft /> Back home
             </Link>
           </div>
         </form>
 
-        <div className="text-xs text-gray-500 mt-4">
-          <p>Test accounts:</p>
-          <ul className="list-disc pl-5">
-            <li>adarsh / password123</li>
-            <li>meera / letmein</li>
+        {/* Test Accounts Hint */}
+        <div className="text-xs text-stone-500 mt-6 pt-4 border-t border-stone-100">
+          <p className="font-medium mb-1">Test accounts:</p>
+          <ul className="list-disc pl-5 space-y-0.5">
+            <li>**adarsh** / `password123`</li>
+            <li>**meera** / `letmein`</li>
           </ul>
         </div>
       </div>
