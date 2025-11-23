@@ -127,3 +127,22 @@ class HotelViewSet(viewsets.ViewSet):
 
         scored_results.sort(key=lambda x: x['score'], reverse=True)
         return Response(scored_results)
+    
+    @action(detail=False, methods=["get"], url_path="random")
+    def random(self, request):
+        """
+        GET /api/hotels/random/?count=3
+        Returns `count` random hotels (default 3, max 50).
+        """
+        try:
+            count = int(request.query_params.get("count", 3))
+        except (TypeError, ValueError):
+            count = 3
+        if count < 1:
+            count = 1
+        if count > 50:
+            count = 50
+
+        qs = Hotel.objects.order_by("?")[:count]
+        serializer = HotelSerializer(qs, many=True)
+        return Response(serializer.data)
