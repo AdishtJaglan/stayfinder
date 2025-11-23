@@ -11,6 +11,12 @@ from sklearn.metrics.pairwise import cosine_similarity
 from .models import Hotel
 from .serializer import HotelSerializer
 
+from sentence_transformers import SentenceTransformer, util
+
+print("Loading AI Model...") 
+model = SentenceTransformer('all-MiniLM-L6-v2') 
+print("AI Model Loaded.")
+
 def clamp(n, minn, maxn):
     return max(minn, min(maxn, n))
 
@@ -74,60 +80,43 @@ class HotelViewSet(viewsets.ViewSet):
             return Response([])
 
         
-        user_profile_text = f"{trip_type} trip. " 
-        user_profile_text += " ".join(user_amenities) 
+        hotels = list(hotels)
+        if not hotels:
+            return Response([])
+
+
+        user_prompt = f"I want a {trip_type} trip. "
+        user_prompt += f"Amenities: {' '.join(user_amenities)}. "
         if sdg_pref:
-            user_profile_text += f" focused on sustainable goal {sdg_pref}"
-
-        hotel_corpus = []
-        hotel_refs = [] # To keep track of which hotel is which index
-
-        for h in hotels:
-            amenities_str = " ".join(h.amenities) if h.amenities else ""
-            tags_str = " ".join(h.tags) if h.tags else ""
-            ideal_str = " ".join(h.ideal_for) if h.ideal_for else ""
-            
-            text_soup = f"{h.description} {amenities_str} {tags_str} {ideal_str} {h.rating} stars"
-            hotel_corpus.append(text_soup)
-            hotel_refs.append(h)
-
-        corpus_with_user = [user_profile_text] + hotel_corpus
+            user_prompt += f"I care about SDG {sdg_pref}. "
         
-        tfidf = TfidfVectorizer(stop_words='english')
-        tfidf_matrix = tfidf.fit_transform(corpus_with_user)
+        hotel_descriptions = []
+        for h in hotels:
+            desc = f"{h.name} is a {h.city} hotel. {h.description}. "
+            desc += f"It has {' '.join(h.amenities)}. "
+            desc += f"Good for {' '.join(h.ideal_for)}."
+            hotel_descriptions.append(desc)
 
-        cosine_sim = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
+        query_embedding = model.encode(user_prompt, convert_to_tensor=True)
+        hotel_embeddings = model.encode(hotel_descriptions, convert_to_tensor=True)
+
+        cosine_scores = util.cos_sim(query_embedding, hotel_embeddings)[0]
 
         scored_results = []
 
-        for idx, hotel in enumerate(hotel_refs):
-            ml_score = cosine_sim[idx] * 50 
+        for idx, hotel in enumerate(hotels):
+            ai_score_raw = float(cosine_scores[idx])
+            ai_score = ai_score_raw * 50
             
-            rule_score = 0
             reasons = []
-
-            if ml_score > 15:
-                reasons.append("AI Match: High semantic similarity to your preferences.")
+            rule_score = 0
             
-            rating = float(hotel.rating) if hotel.rating else 0
-            rule_score += rating * 5
+            if ai_score_raw > 0.45:
+                reasons.append("AI Confidence: High semantic match with your preferences.")
+            elif ai_score_raw > 0.25:
+                reasons.append("AI Confidence: Moderate match.")
 
-            price = hotel.price_per_night
-            if min_budget <= price <= max_budget:
-                rule_score += 20
-                reasons.append(f"Price ₹{price} is within budget.")
-            else:
-                rule_score -= 10
-                reasons.append(f"Price ₹{price} is outside budget range.")
-
-            if sdg_pref and hotel.sdg_tags and sdg_pref in hotel.sdg_tags:
-                rule_score += 15
-                reasons.append(f"Directly supports SDG {sdg_pref}.")
-
-            final_score = round(ml_score + rule_score)
-            
-            if not reasons:
-                reasons.append("Matched based on general location availability.")
+            final_score = round(ai_score + rule_score)
 
             scored_results.append({
                 "hotel": HotelSerializer(hotel).data,
