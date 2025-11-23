@@ -1,29 +1,115 @@
 import { useParams, Link } from "react-router-dom";
-import { useState } from "react";
-import { hotelsRich } from "../data/hotels-rich";
+import { useState, useEffect } from "react";
 import {
   FiStar,
   FiMapPin,
   FiDollarSign,
   FiTag,
   FiBookOpen,
-} from "react-icons/fi"; // Added icons
+} from "react-icons/fi";
+
+const DetailSkeleton = () => (
+  <div className="bg-stone-50 min-h-screen text-stone-800 animate-pulse">
+    <div className="max-w-6xl mx-auto p-6 md:p-10 space-y-10">
+      <div className="h-4 w-32 bg-stone-300 rounded mb-8"></div>
+
+      {/* Header Skeleton */}
+      <div className="space-y-3">
+        <div className="h-8 w-1/2 bg-stone-300 rounded"></div>
+        <div className="h-4 w-1/3 bg-stone-200 rounded"></div>
+      </div>
+
+      {/* Image Carousel Skeleton */}
+      <div className="relative flex gap-4 overflow-x-auto">
+        {Array.from({ length: 3 }).map((_, idx) => (
+          <div
+            key={idx}
+            className="min-w-[90%] md:min-w-[60%] lg:min-w-[40%] h-80 relative rounded-lg bg-stone-200"
+          />
+        ))}
+      </div>
+
+      {/* Pricing Block Skeleton */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between bg-white border border-stone-200 rounded-lg shadow-sm p-6 gap-6">
+        <div className="flex-1 space-y-2">
+          <div className="h-3 w-1/3 bg-stone-200 rounded"></div>
+          <div className="h-6 w-2/3 bg-stone-300 rounded"></div>
+        </div>
+        <div className="w-px h-10 bg-stone-200 hidden md:block" />
+        <div className="flex-1 space-y-2">
+          <div className="h-3 w-1/3 bg-stone-200 rounded"></div>
+          <div className="h-6 w-2/3 bg-stone-300 rounded"></div>
+        </div>
+        <div className="h-12 w-full md:w-48 bg-emerald-700 rounded-md"></div>
+      </div>
+
+      {/* Description Skeleton */}
+      <div className="border-b border-stone-200 pb-8 space-y-3">
+        <div className="h-6 w-1/4 bg-stone-300 rounded"></div>
+        <div className="h-4 w-full bg-stone-200 rounded"></div>
+        <div className="h-4 w-11/12 bg-stone-200 rounded"></div>
+      </div>
+    </div>
+  </div>
+);
 
 export default function HotelDetail() {
   const { id } = useParams();
-  const hotel = hotelsRich.find((h) => h.id === id);
-
+  const [hotel, setHotel] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [loadedIndex, setLoadedIndex] = useState({});
 
-  if (!hotel) {
+  useEffect(() => {
+    if (!id) {
+      setError("No hotel ID provided.");
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchHotel = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      const API_URL = `http://127.0.0.1:8000/api/hotels/${id}/`;
+
+      try {
+        const response = await fetch(API_URL);
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Hotel not found.");
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setHotel(data);
+      } catch (e) {
+        console.error("Fetching hotel details failed:", e);
+        setError(e.message || "Failed to fetch hotel details.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHotel();
+  }, [id]);
+
+  if (isLoading) {
+    return <DetailSkeleton />;
+  }
+
+  if (error || !hotel) {
     return (
-      // Themed Error State
       <div className="p-10 text-center bg-stone-50 min-h-screen text-stone-800">
         <h2 className="text-2xl font-serif font-bold mb-4">
-          Stay Details Not Found
+          {error || "Stay Details Not Found"}
         </h2>
         <p className="mb-4 text-stone-600">
-          The hotel you're looking for doesn't seem to exist.
+          {error
+            ? "There was an issue retrieving the hotel details."
+            : "The hotel you're looking for doesn't seem to exist."}
         </p>
         <Link
           to="/results"
@@ -36,7 +122,6 @@ export default function HotelDetail() {
   }
 
   return (
-    // Base: Off-white background, elegant margins, and serif headings
     <div className="bg-stone-50 min-h-screen text-stone-800">
       <div className="max-w-6xl mx-auto p-6 md:p-10 space-y-10">
         <Link
@@ -60,43 +145,43 @@ export default function HotelDetail() {
 
         {/* --- Image Carousel --- */}
         <div className="relative flex gap-4 overflow-x-auto">
-          {hotel.images?.map((img, idx) => {
-            const blurImg = hotel.blurPlaceholder;
-            const alt = hotel.images_alt?.[idx] || hotel.name;
-            const isLoaded = loadedIndex[idx];
+          {Array.isArray(hotel.images) &&
+            hotel.images.map((img, idx) => {
+              const blurImg = hotel.blurPlaceholder;
+              const alt = hotel.images_alt?.[idx] || hotel.name;
+              const isLoaded = loadedIndex[idx];
 
-            return (
-              <div
-                key={idx}
-                // Larger images for a gallery feel
-                className="min-w-[90%] md:min-w-[60%] lg:min-w-[40%] h-80 relative rounded-lg shadow-md overflow-hidden bg-stone-200"
-              >
-                {/* Blur placeholder */}
-                <img
-                  src={blurImg}
-                  className={`absolute inset-0 w-full h-full object-cover transition duration-500 ${
-                    isLoaded
-                      ? "opacity-0 blur-0"
-                      : "opacity-100 blur-sm scale-105"
-                  }`}
-                  alt={alt + " blur"}
-                />
+              return (
+                <div
+                  key={idx}
+                  className="min-w-[90%] md:min-w-[60%] lg:min-w-[40%] h-80 relative rounded-lg shadow-md overflow-hidden bg-stone-200"
+                >
+                  {/* Blur placeholder */}
+                  <img
+                    src={blurImg}
+                    className={`absolute inset-0 w-full h-full object-cover transition duration-500 ${
+                      isLoaded
+                        ? "opacity-0 blur-0"
+                        : "opacity-100 blur-sm scale-105"
+                    }`}
+                    alt={alt + " blur"}
+                  />
 
-                {/* Real image */}
-                <img
-                  src={img}
-                  loading="lazy"
-                  alt={alt}
-                  onLoad={() =>
-                    setLoadedIndex((prev) => ({ ...prev, [idx]: true }))
-                  }
-                  className={`w-full h-full object-cover transition duration-700 ${
-                    isLoaded ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-              </div>
-            );
-          })}
+                  {/* Real image */}
+                  <img
+                    src={img}
+                    loading="lazy"
+                    alt={alt}
+                    onLoad={() =>
+                      setLoadedIndex((prev) => ({ ...prev, [idx]: true }))
+                    }
+                    className={`w-full h-full object-cover transition duration-700 ${
+                      isLoaded ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                </div>
+              );
+            })}
         </div>
 
         {/* --- Pricing & Rating Block --- */}
@@ -106,7 +191,7 @@ export default function HotelDetail() {
               <FiDollarSign className="text-emerald-700" /> Price per night
             </p>
             <p className="text-3xl font-bold text-emerald-800">
-              ₹{hotel.price_per_night.toLocaleString()}
+              {hotel.price_per_night?.toLocaleString() || "N/A"}
             </p>
           </div>
 
@@ -152,14 +237,15 @@ export default function HotelDetail() {
               <FiTag className="text-emerald-700" /> Key Amenities
             </h2>
             <div className="flex flex-wrap gap-3">
-              {hotel.amenities?.map((a) => (
-                <span
-                  key={a}
-                  className="bg-stone-100 border border-stone-300 px-4 py-2 rounded-full text-sm text-stone-700 font-medium"
-                >
-                  {a}
-                </span>
-              ))}
+              {Array.isArray(hotel.amenities) &&
+                hotel.amenities.map((a) => (
+                  <span
+                    key={a}
+                    className="bg-stone-100 border border-stone-300 px-4 py-2 rounded-full text-sm text-stone-700 font-medium"
+                  >
+                    {a}
+                  </span>
+                ))}
             </div>
           </section>
 
@@ -169,14 +255,15 @@ export default function HotelDetail() {
               <FiBookOpen className="text-emerald-700" /> Sustainability Focus
             </h3>
             <div className="flex gap-3 flex-wrap">
-              {hotel.sdg_tags?.map((tag) => (
-                <span
-                  key={tag}
-                  className="text-sm bg-emerald-50 border border-emerald-300 text-emerald-900 px-3 py-1.5 rounded-full font-semibold"
-                >
-                  SDG {tag}
-                </span>
-              ))}
+              {Array.isArray(hotel.sdg_tags) &&
+                hotel.sdg_tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-sm bg-emerald-50 border border-emerald-300 text-emerald-900 px-3 py-1.5 rounded-full font-semibold"
+                  >
+                    SDG {tag}
+                  </span>
+                ))}
             </div>
           </section>
         </div>
