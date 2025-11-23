@@ -126,10 +126,11 @@ export default function Recommend() {
     setProgress(0);
 
     const lines = [
-      "Sending preferences to server...",
-      "Analyzing database against your criteria...",
-      "Scoring budget, amenities, and SDGs...",
-      "Finalizing top matches...",
+      "Connecting to Neural Engine...",
+      "Vectorizing your preferences...",
+      "Running TF-IDF analysis on hotel descriptions...",
+      "Calculating Cosine Similarity scores...",
+      "Finalizing best matches...",
     ];
 
     let revealIndex = 0;
@@ -140,57 +141,51 @@ export default function Recommend() {
       if (revealIndex >= lines.length) {
         clearInterval(traceTimerRef.current);
       }
-    }, 800);
-
-    const fakeDuration = 2000;
+    }, 700);
+    const totalDuration = 3500;
     const tickInterval = 50;
-    const ticks = Math.ceil(fakeDuration / tickInterval);
+    const ticks = Math.ceil(totalDuration / tickInterval);
     let t = 0;
     progressTimerRef.current && clearInterval(progressTimerRef.current);
     progressTimerRef.current = setInterval(() => {
       t += 1;
-      const p = Math.min(90, Math.round((t / ticks) * 100));
+      const p = Math.min(95, Math.round((t / ticks) * 100));
       setProgress(p);
     }, tickInterval);
-
+    console.log(JSON.stringify(quiz));
     try {
-      console.log(JSON.stringify(quiz));
-      // 1. Hit the new endpoint
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/hotels/recommend/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(quiz),
-        }
-      );
+      const minDelayPromise = new Promise((resolve) => {
+        setTimeout(resolve, 3500);
+      });
 
-      if (!response.ok) {
-        throw new Error("Recommendation failed");
+      const apiPromise = fetch("http://127.0.0.1:8000/api/hotels/recommend/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(quiz),
+      }).then((res) => {
+        if (!res.ok) throw new Error("Recommendation failed");
+        return res.json();
+      });
+
+      const [_, data] = await Promise.all([minDelayPromise, apiPromise]);
+
+      setResults(data);
+      setIsThinking(false);
+      setProgress(100);
+
+      if (updateProfile && data.length > 0) {
+        const topIds = data.slice(0, 6).map((r) => r.hotel.id);
+        updateProfile({
+          lastRecommendations: topIds,
+          quizAnswers: quiz,
+          lastRecommendedAt: new Date().toISOString(),
+        });
       }
-
-      const data = await response.json();
-
-      setTimeout(() => {
-        setResults(data);
-        setIsThinking(false);
-        setProgress(100);
-
-        if (updateProfile && data.length > 0) {
-          const topIds = data.slice(0, 6).map((r) => r.hotel.id);
-          updateProfile({
-            lastRecommendations: topIds,
-            quizAnswers: quiz,
-            lastRecommendedAt: new Date().toISOString(),
-          });
-        }
-      }, 1000);
     } catch (error) {
       console.error("Error fetching recommendations:", error);
       setIsThinking(false);
-      setTraceLines((prev) => [...prev, "Error: Could not fetch data."]);
     } finally {
       if (progressTimerRef.current) clearInterval(progressTimerRef.current);
     }
